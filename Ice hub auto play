@@ -1,40 +1,39 @@
--- LocalScript (StarterPlayerScripts ou StarterGui)
-
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local LocalPlayer = Players.LocalPlayer
 
 -- GUI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = playerGui
+local gui = Instance.new("ScreenGui")
+gui.Name = "AvisoScript"
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Quadrado (Frame)
+-- Painel central
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 320, 0, 160)
-frame.Position = UDim2.new(0.5, -160, 0.5, -80)
-frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-frame.BorderSizePixel = 2
-frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-frame.Parent = screenGui
+frame.Size = UDim2.new(0, 500, 0, 200)
+frame.Position = UDim2.new(0.5, -250, 0.5, -100)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+frame.BorderSizePixel = 0
+frame.Parent = gui
 
--- Texto
-local textLabel = Instance.new("TextLabel")
-textLabel.Size = UDim2.new(1, 0, 1, 0)
-textLabel.BackgroundTransparency = 1
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-textLabel.Font = Enum.Font.GothamBold
-textLabel.TextScaled = true
-textLabel.Parent = frame
+-- Bordas arredondadas
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 15)
+corner.Parent = frame
 
--- Texto inicial
-textLabel.Text = "WARNING: SCRIPT UNDER UPDATE WILL ONLY BE BACK AT 8 PM!"
+-- Texto principal
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, 0, 1, 0)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.TextScaled = true
+label.Font = Enum.Font.GothamBold
+label.Parent = frame
 
--- Espera alguns segundos e troca para relógio
-task.wait(3)
+-- Atualizar hora em tempo real
+while true do
+	local hora = os.date("%H:%M:%S")
 
-RunService.RenderStepped:Connect(function()
-	local timeString = os.date("%H:%M:%S")
-	textLabel.Text = "REAL TIME: " .. timeString
-end)
+	label.Text =
+		"AVISO: O SCRIPT EM ATUALIZAÇÃO SÓ VOLTARÁ ÀS 20H!\n\nHORÁRIO ATUAL: " .. hora
+
+	wait(1)
+end
