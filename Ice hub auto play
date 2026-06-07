@@ -1,39 +1,81 @@
 local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- GUI
 local gui = Instance.new("ScreenGui")
-gui.Name = "AvisoScript"
+gui.Name = "IceHubWarning"
+gui.ResetOnSpawn = false
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- Painel central
+-- Frame
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 500, 0, 200)
-frame.Position = UDim2.new(0.5, -250, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+frame.Size = UDim2.new(0, 520, 0, 220)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
 frame.BorderSizePixel = 0
 frame.Parent = gui
 
--- Bordas arredondadas
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 15)
-corner.Parent = frame
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(0, 255, 120)
+stroke.Transparency = 0.2
+stroke.Parent = frame
+
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 50)
+title.BackgroundTransparency = 1
+title.Text = "ICE HUB // SYSTEM WARNING"
+title.TextColor3 = Color3.fromRGB(0, 255, 120)
+title.Font = Enum.Font.Code
+title.TextSize = 22
+title.Parent = frame
 
 -- Texto principal
 local label = Instance.new("TextLabel")
-label.Size = UDim2.new(1, 0, 1, 0)
+label.Size = UDim2.new(1, -20, 1, -60)
+label.Position = UDim2.new(0, 10, 0, 50)
 label.BackgroundTransparency = 1
 label.TextColor3 = Color3.fromRGB(255, 255, 255)
-label.TextScaled = true
-label.Font = Enum.Font.GothamBold
+label.Font = Enum.Font.Code
+label.TextSize = 18
+label.TextWrapped = true
+label.TextYAlignment = Enum.TextYAlignment.Top
+label.TextXAlignment = Enum.TextXAlignment.Left
 label.Parent = frame
 
--- Atualizar hora em tempo real
+-- efeito pulsar borda
+task.spawn(function()
+	while true do
+		TweenService:Create(stroke, TweenInfo.new(1), {Transparency = 0.6}):Play()
+		task.wait(1)
+		TweenService:Create(stroke, TweenInfo.new(1), {Transparency = 0.1}):Play()
+		task.wait(1)
+	end
+end)
+
+-- TYPEWRITER FUNCTION
+local function typeWrite(text, speed)
+	label.Text = ""
+	for i = 1, #text do
+		label.Text = string.sub(text, 1, i)
+		task.wait(speed)
+	end
+end
+
+-- LOOP com atualização de hora
 while true do
-	local hora = os.date("%H:%M:%S")
+	local msg =
+		"⚠ SYSTEM ALERT ⚠\n\n" ..
+		"SCRIPT EM ATUALIZAÇÃO\n" ..
+		"RETORNO PREVISTO: 20:00 (8 PM)\n\n" ..
+		"TIME NOW: " .. os.date("%H:%M:%S") .. "\n" ..
+		"STATUS: MAINTENANCE MODE ACTIVE\n"
 
-	label.Text =
-		"AVISO: O SCRIPT EM ATUALIZAÇÃO SÓ VOLTARÁ ÀS 20H!\n\nHORÁRIO ATUAL: " .. hora
-
-	wait(1)
+	typeWrite(msg, 0.02)
+	task.wait(1)
 end
