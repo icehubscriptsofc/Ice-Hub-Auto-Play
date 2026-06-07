@@ -1,4 +1,4 @@
--- Script Combinado Completo: Intro + Auto L/R + Infinite Jump + Otimização + ESP + Anti-Ragdoll + Auto Bat + Drop + Auto Proximity Prompt
+-- Script Combinado Completo: Intro + Auto L/R (Focado em Prompt) + Infinite Jump + Otimização + ESP + Anti-Ragdoll + Auto Bat + Drop + Auto Proximity Prompt
 local Players               = game:GetService("Players")
 local RunService            = game:GetService("RunService")
 local TweenService          = game:GetService("TweenService")
@@ -9,7 +9,8 @@ local Debris                = game:GetService("Debris")
 local Terrain               = workspace:FindFirstChildOfClass("Terrain")
 local Player                = Players.LocalPlayer
 
-local IntroFinalizada = false -- Variável de controle para os prompts
+local IntroFinalizada = false 
+local PromptEmExecucao = false -- Trava para o movimento esperar o prompt acabar
 
 ---------------------------------------------------------
 -- SEÇÃO: INTRODUÇÃO (ICE HUB)
@@ -19,7 +20,6 @@ IntroGui.Name = "IceHubIntro"
 IntroGui.ResetOnSpawn = false
 IntroGui.Parent = Player:WaitForChild("PlayerGui")
 
--- Música
 local Sound = Instance.new("Sound")
 Sound.Parent = IntroGui
 Sound.SoundId = "rbxassetid://137828639403630"
@@ -27,7 +27,6 @@ Sound.Volume = 2
 Sound.Looped = false
 Sound:Play()
 
--- ICE Text
 local Ice = Instance.new("TextLabel")
 Ice.Parent = IntroGui
 Ice.Size = UDim2.new(0, 350, 0, 120)
@@ -44,7 +43,6 @@ IceStroke.Parent = Ice
 IceStroke.Thickness = 2
 IceStroke.Color = Color3.new(1, 1, 1)
 
--- HUB Text
 local Hub = Instance.new("TextLabel")
 Hub.Parent = IntroGui
 Hub.Size = UDim2.new(0, 350, 0, 120)
@@ -61,59 +59,49 @@ HubStroke.Parent = Hub
 HubStroke.Thickness = 2
 HubStroke.Color = Color3.fromRGB(0, 170, 255)
 
--- Animação de Entrada
 local MoveTween = TweenInfo.new(5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-
 TweenService:Create(Ice, MoveTween, {Position = UDim2.new(0.35, 0, 0.5, 0)}):Play()
 TweenService:Create(Hub, MoveTween, {Position = UDim2.new(0.65, 0, 0.5, 0)}):Play()
 
-task.wait(5) -- Espera chegar
-task.wait(5) -- Fica no centro por 5 segundos
+task.wait(5)
+task.wait(5)
 
--- Animação de Saída
 local ExitTween = TweenInfo.new(2.5, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-
 TweenService:Create(Ice, ExitTween, {Position = UDim2.new(-0.4, 0, 0.5, 0), TextTransparency = 1}):Play()
 TweenService:Create(Hub, ExitTween, {Position = UDim2.new(1.4, 0, 0.5, 0), TextTransparency = 1}):Play()
 TweenService:Create(Sound, TweenInfo.new(2.5), {Volume = 0}):Play()
 
 task.wait(2.5)
-
 Sound:Stop()
 IntroGui:Destroy()
 
-IntroFinalizada = true -- Ativa a permissão para os Prompts e outros sistemas rodarem
+IntroFinalizada = true 
 
 ---------------------------------------------------------
--- SEÇÃO: AUTO PROXIMITY PROMPT (SEU CÓDIGO APÓS A INTRO)
+-- SEÇÃO: AUTO PROXIMITY PROMPT (SISTEMA INTELIGENTE)
 ---------------------------------------------------------
 ProximityPromptService.PromptShown:Connect(function(prompt)
-    if not IntroFinalizada then return end -- Bloqueia se a intro ainda estiver rodando
+    if not IntroFinalizada then return end 
     
     local attachment = prompt.Parent
-    
     if attachment and attachment.Name == "PromptAttachment" then
         local spawnPart = attachment.Parent
         if spawnPart and spawnPart.Name == "Spawn" then
             local basePart = spawnPart.Parent
             if basePart and basePart.Name == "Base" then
                 local animalPodium = basePart.Parent
-                
                 if animalPodium and animalPodium.Parent and animalPodium.Parent.Name == "AnimalPodiums" then
                     
-                    -- 1. Força a duração do prompt para 1 segundo (conforme seu ajuste)
+                    PromptEmExecucao = true -- Diz para o Auto L/R esperar
+                    
                     prompt.HoldDuration = 1
-                    
-                    -- 2. Começa a "segurar" o botão automaticamente
                     prompt:InputHoldBegin()
-                    
-                    -- 3. Espera o 1 segundo do carregamento
                     task.wait(1)
-                    
-                    -- 4. Solta o botão, finalizando a ação sozinho
                     prompt:InputHoldEnded()
                     
-                    print("Segurou por 1 segundo e ativou automaticamente!")
+                    print("Prompt executado com sucesso!")
+                    task.wait(0.2) 
+                    PromptEmExecucao = false -- Libera o Auto L/R para voltar
                 end
             end
         end
@@ -145,16 +133,13 @@ for _, v in ipairs(workspace:GetDescendants()) do
     end
 end
 
-pcall(function()
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-end)
+pcall(function() settings().Rendering.QualityLevel = Enum.QualityLevel.Level01 end)
 
 ---------------------------------------------------------
 -- SEÇÃO: ESP (VER JOGADORES)
 ---------------------------------------------------------
 local function AddESP(player)
     if player == Player then return end
-
     local function Setup(char)
         local old = char:FindFirstChild("PlayerESP")
         if old then old:Destroy() end
@@ -188,46 +173,30 @@ local function AddESP(player)
             text.Parent = gui
         end
     end
-
     if player.Character then Setup(player.Character) end
     player.CharacterAdded:Connect(Setup)
 end
-
 for _, p in ipairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 
 ---------------------------------------------------------
--- SEÇÃO: SISTEMAS ADICIONAIS (COMEÇAM DESATIVADOS)
+-- SEÇÃO: SISTEMAS ADICIONAIS (QUADRADO)
 ---------------------------------------------------------
-local Enabled = {
-    AutoBat = false,      
-    Drop = false,         
-    AntiRagdoll = true    
-}
-
+local Enabled = { AutoBat = false, Drop = false, AntiRagdoll = true }
 local Connections = {}
 
--- ANTI RAGDOLL SYSTEM
 local function startAntiRagdoll()
     if Connections.antiRagdoll then return end
     Connections.antiRagdoll = RunService.Heartbeat:Connect(function()
         if not Enabled.AntiRagdoll then return end
-
-        local char = Player.Character
-        if not char then return end
-
+        local char = Player.Character or Player.CharacterAdded:Wait()
         local root = char:FindFirstChild("HumanoidRootPart")
         local hum = char:FindFirstChildOfClass("Humanoid")
-
         if hum then
             local humState = hum:GetState()
-            if humState == Enum.HumanoidStateType.Physics
-            or humState == Enum.HumanoidStateType.Ragdoll
-            or humState == Enum.HumanoidStateType.FallingDown then
-
+            if humState == Enum.HumanoidStateType.Physics or humState == Enum.HumanoidStateType.Ragdoll or humState == Enum.HumanoidStateType.FallingDown then
                 hum:ChangeState(Enum.HumanoidStateType.Running)
                 workspace.CurrentCamera.CameraSubject = hum
-
                 pcall(function()
                     local PlayerModule = Player.PlayerScripts:FindFirstChild("PlayerModule")
                     if PlayerModule then
@@ -235,106 +204,74 @@ local function startAntiRagdoll()
                         Controls:Enable()
                     end
                 end)
-
                 if root then
-                    root.Velocity = Vector3.new(0,0,0)
-                    root.RotVelocity = Vector3.new(0,0,0)
+                    root.Velocity = Vector3.zero
+                    root.RotVelocity = Vector3.zero
                 end
             end
         end
-
         for _, obj in ipairs(char:GetDescendants()) do
-            if obj:IsA("Motor6D") and obj.Enabled == false then
-                obj.Enabled = true
-            end
+            if obj:IsA("Motor6D") and obj.Enabled == false then obj.Enabled = true end
         end
     end)
 end
 
--- DROP SYSTEM
 local dropJumping = false
 local dropLastJump = 0
-
 local function DropBrainrot()
     if not Enabled.Drop then return end
     local now = tick()
     if now - dropLastJump < 0.4 then return end
     if dropJumping then return end
-
     local char = Player.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hrp or not hum then return end
-
     dropLastJump = now
     dropJumping = true
-
     local groundPos = hrp.Position
-
     hum:ChangeState(Enum.HumanoidStateType.Jumping)
     hrp.AssemblyLinearVelocity = Vector3.new(0, 140, 0)
-
     task.delay(0.18, function()
         if hrp then
             hrp.CFrame = CFrame.new(groundPos)
             hrp.AssemblyLinearVelocity = Vector3.zero
         end
-
-        task.delay(0.1, function()
-            dropJumping = false
-        end)
+        task.delay(0.1, function() dropJumping = false end)
     end)
 end
 
--- AUTO BAT SYSTEM
 local function getClosestPlayer()
     local closestPlayer = nil
     local shortestDistance = math.huge
     local localCharacter = Player.Character
-
-    if not localCharacter or not localCharacter:FindFirstChild("HumanoidRootPart") then
-        return nil
-	end
-
+    if not localCharacter or not localCharacter:FindFirstChild("HumanoidRootPart") then return nil end
     local localHRP = localCharacter.HumanoidRootPart
-
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= Player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local targetHRP = player.Character.HumanoidRootPart
             local distance = (localHRP.Position - targetHRP.Position).Magnitude
-
             if distance < shortestDistance then
                 shortestDistance = distance
                 closestPlayer = player
             end
         end
     end
-
     return closestPlayer
 end
 
 local function startAutoBat()
     if Connections.AutoBatConnection then return end
-
     Connections.AutoBatConnection = RunService.RenderStepped:Connect(function()
         if not Enabled.AutoBat then return end
-
         local character = Player.Character
         if not character then return end
-
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if not humanoid or humanoid.Health <= 0 then return end
-
         local bat = Player.Backpack:FindFirstChild("Bat")
-        if bat then
-            humanoid:EquipTool(bat)
-        end
-
+        if bat then humanoid:EquipTool(bat) end
         local equippedBat = character:FindFirstChild("Bat")
-        if equippedBat then
-            equippedBat:Activate()
-        end
-
+        if equippedBat then equippedBat:Activate() end
         local closestPlayer = getClosestPlayer()
         if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("HumanoidRootPart") then
             local targetPosition = closestPlayer.Character.HumanoidRootPart.Position
@@ -343,14 +280,11 @@ local function startAutoBat()
     end)
 end
 
--- Loops secundários automáticos
 startAntiRagdoll()
 task.spawn(function()
     while true do
         task.wait(0.5)
-        if Enabled.Drop then
-            DropBrainrot()
-        end
+        if Enabled.Drop then DropBrainrot() end
     end
 end)
 
@@ -378,19 +312,12 @@ local function CreateButton(text)
     frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     frame.BorderSizePixel = 0
     frame.Parent = MainFrame
-
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, 0, 1, 0)
     button.BackgroundTransparency = 1
-    if text == "Auto Bat" then 
-        button.Text = "Auto Bat: OFF" 
-    elseif text == "Drop" then
-        button.Text = "Drop: OFF"
-    else 
-        button.Text = text 
-    end
+    if text == "Auto Bat" then button.Text = "Auto Bat: OFF" elseif text == "Drop" then button.Text = "Drop: OFF" else button.Text = text end
     button.TextColor3 = Color3.fromRGB(255,255,255)
     button.TextScaled = true
     button.Parent = frame
@@ -409,54 +336,30 @@ local function CreateButton(text)
 
     task.spawn(function()
         local r = 0
-        while frame.Parent do
-            r = (r + 2) % 360
-            grad.Rotation = r
-            task.wait(0.02)
-        end
+        while frame.Parent do r = (r + 2) % 360; grad.Rotation = r; task.wait(0.02) end
     end)
 
     button.MouseButton1Click:Connect(function()
         TweenService:Create(frame, TweenInfo.new(0.08), {Size = UDim2.new(0, 135, 0, 37)}):Play()
         task.wait(0.08)
         TweenService:Create(frame, TweenInfo.new(0.12), {Size = UDim2.new(0, 140, 0, 40)}):Play()
-
         if text == "Auto Bat" then
             Enabled.AutoBat = not Enabled.AutoBat
-            if Enabled.AutoBat then
-                button.Text = "Auto Bat: ON"
-                startAutoBat()
-            else
-                button.Text = "Auto Bat: OFF"
-                if Connections.AutoBatConnection then
-                    Connections.AutoBatConnection:Disconnect()
-                    Connections.AutoBatConnection = nil
-                end
-            end
+            if Enabled.AutoBat then button.Text = "Auto Bat: ON" startAutoBat() else button.Text = "Auto Bat: OFF" if Connections.AutoBatConnection then Connections.AutoBatConnection:Disconnect() Connections.AutoBatConnection = nil end end
         elseif text == "Drop" then
             Enabled.Drop = not Enabled.Drop
-            if Enabled.Drop then
-                button.Text = "Drop: ON"
-                DropBrainrot()
-            else
-                button.Text = "Drop: OFF"
-            end
+            if Enabled.Drop then button.Text = "Drop: ON" DropBrainrot() else button.Text = "Drop: OFF" end
         end
     end)
-
     return button
 end
-
 CreateButton("Auto Bat")
 CreateButton("Drop")
 
 ---------------------------------------------------------
 -- SEÇÃO: CONFIGURAÇÕES E FÍSICA DO PAINEL PRINCIPAL
 ---------------------------------------------------------
-local Config = {
-    ForwardSpeed = 38,
-    ReturnSpeed  = 28,
-}
+local Config = { ForwardSpeed = 38, ReturnSpeed  = 28 }
 
 local POSITION_L1     = Vector3.new(-476.48, -6.28,  92.73)
 local POSITION_LEND   = Vector3.new(-483.12, -4.95,  94.80)
@@ -464,33 +367,33 @@ local POSITION_LFINAL = Vector3.new(-473.38, -8.40,  22.34)
 
 local POSITION_R1     = Vector3.new(-476.16, -6.52,  25.62)
 local POSITION_REND   = Vector3.new(-483.04, -5.09,  23.14)
-local POSITION_RFINAL = Vector3.new(-476.17, -7.91, 97.91)
+local POSITION_RFINAL = Vector3.new(-476.17, -7.91,  97.91)
 
 local function getHRP()
     local c = Player.Character
     return c and c:FindFirstChild("HumanoidRootPart")
 end
 
+local function getHum()
+    local c = Player.Character
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+
 ---------------------------------------------------------
 -- SEÇÃO: INFINITE JUMP
 ---------------------------------------------------------
 local infJump = true
-
 UserInputService.JumpRequest:Connect(function()
     if infJump then
         local char = Player.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
-            char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(
-                char.HumanoidRootPart.AssemblyLinearVelocity.X,
-                45,
-                char.HumanoidRootPart.AssemblyLinearVelocity.Z
-            )
+            char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(char.HumanoidRootPart.AssemblyLinearVelocity.X, 45, char.HumanoidRootPart.AssemblyLinearVelocity.Z)
         end
     end
 end)
 
 ---------------------------------------------------------
--- SEÇÃO: AUTO LEFT / RIGHT (SPEED CORRIGIDO)
+-- SEÇÃO: AUTO LEFT / RIGHT (ANTI-KICK ATUALIZADO)
 ---------------------------------------------------------
 local AutoLeftEnabled = false
 local autoLeftPhase   = 1
@@ -499,8 +402,6 @@ local autoLeftConn    = nil
 local function stopAutoLeft()
     if autoLeftConn then autoLeftConn:Disconnect(); autoLeftConn = nil end
     autoLeftPhase = 1
-    local h = getHRP()
-    if h then h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0) end
 end
 
 local function startAutoLeft()
@@ -510,49 +411,47 @@ local function startAutoLeft()
     autoLeftConn = RunService.Heartbeat:Connect(function()
         if not AutoLeftEnabled then return end
         local h = getHRP()
-        if not h then return end
+        local hum = getHum()
+        if not h or not hum then return end
+
+        hum.WalkSpeed = Config.ForwardSpeed
 
         if autoLeftPhase == 1 then
+            hum:MoveTo(POSITION_L1)
             local d = Vector3.new(POSITION_L1.X - h.Position.X, 0, POSITION_L1.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then autoLeftPhase = 2; return end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
+            if d.Magnitude < 2.5 then autoLeftPhase = 2 end
 
         elseif autoLeftPhase == 2 then
+            hum:MoveTo(POSITION_LEND)
             local d = Vector3.new(POSITION_LEND.X - h.Position.X, 0, POSITION_LEND.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then
-                autoLeftPhase = 0
-                h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
-                task.delay(0.25, function()
+            if d.Magnitude < 2.5 then
+                autoLeftPhase = 0 
+                
+                task.spawn(function()
+                    repeat task.wait(0.1) until not PromptEmExecucao
+                    task.wait(0.3) 
                     if AutoLeftEnabled then autoLeftPhase = 3 end
                 end)
-                return
             end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
 
         elseif autoLeftPhase == 0 then
-            h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
-            return
+            hum:MoveTo(h.Position) 
 
         elseif autoLeftPhase == 3 then
+            hum.WalkSpeed = Config.ReturnSpeed
+            hum:MoveTo(POSITION_L1)
             local d = Vector3.new(POSITION_L1.X - h.Position.X, 0, POSITION_L1.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then autoLeftPhase = 4; return end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
+            if d.Magnitude < 2.5 then autoLeftPhase = 4 end
 
         elseif autoLeftPhase == 4 then
+            hum.WalkSpeed = Config.ReturnSpeed
+            hum:MoveTo(POSITION_LFINAL)
             local d = Vector3.new(POSITION_LFINAL.X - h.Position.X, 0, POSITION_LFINAL.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then
-                h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
+            if d.Magnitude < 2.5 then
                 AutoLeftEnabled = false
                 stopAutoLeft()
-                task.wait(0.25)
                 if _G._updateMiniLeft then _G._updateMiniLeft() end
-                return
             end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
         end
     end)
 end
@@ -564,8 +463,6 @@ local autoRightConn    = nil
 local function stopAutoRight()
     if autoRightConn then autoRightConn:Disconnect(); autoRightConn = nil end
     autoRightPhase = 1
-    local h = getHRP()
-    if h then h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0) end
 end
 
 local function startAutoRight()
@@ -575,49 +472,47 @@ local function startAutoRight()
     autoRightConn = RunService.Heartbeat:Connect(function()
         if not AutoRightEnabled then return end
         local h = getHRP()
-        if not h then return end
+        local hum = getHum()
+        if not h or not hum then return end
+
+        hum.WalkSpeed = Config.ForwardSpeed
 
         if autoRightPhase == 1 then
+            hum:MoveTo(POSITION_R1)
             local d = Vector3.new(POSITION_R1.X - h.Position.X, 0, POSITION_R1.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then autoRightPhase = 2; return end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
+            if d.Magnitude < 2.5 then autoRightPhase = 2 end
 
         elseif autoRightPhase == 2 then
+            hum:MoveTo(POSITION_REND)
             local d = Vector3.new(POSITION_REND.X - h.Position.X, 0, POSITION_REND.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then
-                autoRightPhase = 0
-                h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
-                task.delay(0.25, function()
+            if d.Magnitude < 2.5 then
+                autoRightPhase = 0 
+                
+                task.spawn(function()
+                    repeat task.wait(0.1) until not PromptEmExecucao
+                    task.wait(0.3)
                     if AutoRightEnabled then autoRightPhase = 3 end
                 end)
-                return
             end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ForwardSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ForwardSpeed)
 
         elseif autoRightPhase == 0 then
-            h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
-            return
+            hum:MoveTo(h.Position)
 
         elseif autoRightPhase == 3 then
+            hum.WalkSpeed = Config.ReturnSpeed
+            hum:MoveTo(POSITION_R1)
             local d = Vector3.new(POSITION_R1.X - h.Position.X, 0, POSITION_R1.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then autoRightPhase = 4; return end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
+            if d.Magnitude < 2.5 then autoRightPhase = 4 end
 
         elseif autoRightPhase == 4 then
+            hum.WalkSpeed = Config.ReturnSpeed
+            hum:MoveTo(POSITION_RFINAL)
             local d = Vector3.new(POSITION_RFINAL.X - h.Position.X, 0, POSITION_RFINAL.Z - h.Position.Z)
-            if d.Magnitude < 1.8 then
-                h.AssemblyLinearVelocity = Vector3.new(0, h.AssemblyLinearVelocity.Y, 0)
+            if d.Magnitude < 2.5 then
                 AutoRightEnabled = false
                 stopAutoRight()
-                task.wait(0.25)
                 if _G._updateMiniRight then _G._updateMiniRight() end
-                return
             end
-            local md = d.Unit
-            h.AssemblyLinearVelocity = Vector3.new(md.X * Config.ReturnSpeed, h.AssemblyLinearVelocity.Y, md.Z * Config.ReturnSpeed)
         end
     end)
 end
@@ -653,11 +548,7 @@ borderGrad.Color = ColorSequence.new({
 })
 task.spawn(function()
     local r = 0
-    while frame.Parent do
-        r = (r + 3) % 360
-        borderGrad.Rotation = r
-        task.wait(0.02)
-    end
+    while frame.Parent do r = (r + 3) % 360; borderGrad.Rotation = r; task.wait(0.02) end
 end)
 
 local title = Instance.new("TextLabel", frame)
@@ -738,18 +629,13 @@ local function makeSlider(yPos, labelText, labelColor, fillColorSeq, defaultVal,
     sh.ZIndex                = 5
     Instance.new("UICorner", sh).CornerRadius = UDim.new(1, 0)
     local shg = Instance.new("UIGradient", sh)
-    shg.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0,   1),
-        NumberSequenceKeypoint.new(0.5, 0.4),
-        NumberSequenceKeypoint.new(1,   1),
-    })
+    shg.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.4), NumberSequenceKeypoint.new(1, 1) })
     task.spawn(function()
         local offset = math.random()
         task.wait(offset * 1.5)
         while sh.Parent do
             sh.Position = UDim2.new(-0.15, 0, 0, 0)
-            TweenService:Create(sh, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-                {Position = UDim2.new(1.1, 0, 0, 0)}):Play()
+            TweenService:Create(sh, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {Position = UDim2.new(1.1, 0, 0, 0)}):Play()
             task.wait(1.9)
         end
     end)
@@ -771,9 +657,7 @@ local function makeSlider(yPos, labelText, labelColor, fillColorSeq, defaultVal,
 
     local dragging = false
     btn.MouseButton1Down:Connect(function() dragging = true end)
-    UserInputService.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
+    UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
     UserInputService.InputChanged:Connect(function(i)
         if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
             local pct = math.clamp((i.Position.X - bg.AbsolutePosition.X) / bg.AbsoluteSize.X, 0, 1)
@@ -783,37 +667,11 @@ local function makeSlider(yPos, labelText, labelColor, fillColorSeq, defaultVal,
             onChanged(val)
         end
     end)
-
     return lbl, fill
 end
 
-makeSlider(
-    120,
-    "Speed 1 (aller) : ",
-    Color3.fromRGB(100, 180, 255),
-    ColorSequence.new({
-        ColorSequenceKeypoint.new(0,   Color3.fromRGB(120, 190, 255)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60,  130, 255)),
-        ColorSequenceKeypoint.new(1,   Color3.fromRGB(30,  80,  220)),
-    }),
-    Config.ForwardSpeed,
-    100,
-    function(v) Config.ForwardSpeed = v end
-)
-
-makeSlider(
-    163,
-    "Speed 2 (retour) : ",
-    Color3.fromRGB(80, 220, 140),
-    ColorSequence.new({
-        ColorSequenceKeypoint.new(0,   Color3.fromRGB(130, 255, 180)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40,  200, 100)),
-        ColorSequenceKeypoint.new(1,   Color3.fromRGB(20,  140,  60)),
-    }),
-    Config.ReturnSpeed,
-    100,
-    function(v) Config.ReturnSpeed = v end
-)
+makeSlider(120, "Speed 1 (aller) : ", Color3.fromRGB(100, 180, 255), ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 190, 255)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(60, 130, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 80, 220)) }), Config.ForwardSpeed, 100, function(v) Config.ForwardSpeed = v end)
+makeSlider(163, "Speed 2 (retour) : ", Color3.fromRGB(80, 220, 140), ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(130, 255, 180)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 200, 100)), ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 140, 60)) }), Config.ReturnSpeed, 100, function(v) Config.ReturnSpeed = v end)
 
 local LEFT_ON   = Color3.fromRGB(60,  130, 255)
 local LEFT_OFF  = Color3.fromRGB(30,  70,  180)
