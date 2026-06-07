@@ -1,12 +1,15 @@
--- Script Combinado Completo: Intro + Auto L/R + Infinite Jump + Otimização + ESP + Anti-Ragdoll + Auto Bat + Drop
-local Players          = game:GetService("Players")
-local RunService       = game:GetService("RunService")
-local TweenService     = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local Lighting         = game:GetService("Lighting")
-local Debris           = game:GetService("Debris")
-local Terrain          = workspace:FindFirstChildOfClass("Terrain")
-local Player           = Players.LocalPlayer
+-- Script Combinado Completo: Intro + Auto L/R + Infinite Jump + Otimização + ESP + Anti-Ragdoll + Auto Bat + Drop + Auto Proximity Prompt
+local Players               = game:GetService("Players")
+local RunService            = game:GetService("RunService")
+local TweenService          = game:GetService("TweenService")
+local UserInputService      = game:GetService("UserInputService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local Lighting              = game:GetService("Lighting")
+local Debris                = game:GetService("Debris")
+local Terrain               = workspace:FindFirstChildOfClass("Terrain")
+local Player                = Players.LocalPlayer
+
+local IntroFinalizada = false -- Variável de controle para os prompts
 
 ---------------------------------------------------------
 -- SEÇÃO: INTRODUÇÃO (ICE HUB)
@@ -78,6 +81,44 @@ task.wait(2.5)
 
 Sound:Stop()
 IntroGui:Destroy()
+
+IntroFinalizada = true -- Ativa a permissão para os Prompts e outros sistemas rodarem
+
+---------------------------------------------------------
+-- SEÇÃO: AUTO PROXIMITY PROMPT (SEU CÓDIGO APÓS A INTRO)
+---------------------------------------------------------
+ProximityPromptService.PromptShown:Connect(function(prompt)
+    if not IntroFinalizada then return end -- Bloqueia se a intro ainda estiver rodando
+    
+    local attachment = prompt.Parent
+    
+    if attachment and attachment.Name == "PromptAttachment" then
+        local spawnPart = attachment.Parent
+        if spawnPart and spawnPart.Name == "Spawn" then
+            local basePart = spawnPart.Parent
+            if basePart and basePart.Name == "Base" then
+                local animalPodium = basePart.Parent
+                
+                if animalPodium and animalPodium.Parent and animalPodium.Parent.Name == "AnimalPodiums" then
+                    
+                    -- 1. Força a duração do prompt para 1 segundo (conforme seu ajuste)
+                    prompt.HoldDuration = 1
+                    
+                    -- 2. Começa a "segurar" o botão automaticamente
+                    prompt:InputHoldBegin()
+                    
+                    -- 3. Espera o 1 segundo do carregamento
+                    task.wait(1)
+                    
+                    -- 4. Solta o botão, finalizando a ação sozinho
+                    prompt:InputHoldEnded()
+                    
+                    print("Segurou por 1 segundo e ativou automaticamente!")
+                end
+            end
+        end
+    end
+end)
 
 ---------------------------------------------------------
 -- SEÇÃO: OTIMIZAÇÃO (REMOÇÃO DE LAG)
@@ -156,12 +197,12 @@ for _, p in ipairs(Players:GetPlayers()) do AddESP(p) end
 Players.PlayerAdded:Connect(AddESP)
 
 ---------------------------------------------------------
--- SEÇÃO: SISTEMAS ADICIONAIS (AGORA DESATIVADOS POR PADRÃO)
+-- SEÇÃO: SISTEMAS ADICIONAIS (COMEÇAM DESATIVADOS)
 ---------------------------------------------------------
 local Enabled = {
-    AutoBat = false,      -- Começa desligado
-    Drop = false,         -- Começa desligado
-    AntiRagdoll = true    -- Mantido ativo para suporte de física do boneco
+    AutoBat = false,      
+    Drop = false,         
+    AntiRagdoll = true    
 }
 
 local Connections = {}
@@ -343,7 +384,6 @@ local function CreateButton(text)
     local button = Instance.new("TextButton")
     button.Size = UDim2.new(1, 0, 1, 0)
     button.BackgroundTransparency = 1
-    -- Mostra o estado inicial desativado (OFF)
     if text == "Auto Bat" then 
         button.Text = "Auto Bat: OFF" 
     elseif text == "Drop" then
