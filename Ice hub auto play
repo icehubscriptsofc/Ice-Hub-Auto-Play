@@ -1,10 +1,101 @@
-local texto =
-	"⚠ SYSTEM ALERT ⚠\n\n" ..
-	"AVISO: O SCRIPT ESTÁ EM ATUALIZAÇÃO\n\n" ..
-	"━━━━━━━━━━━━━━━━━━\n" ..
-	"MOTIVO:\n" ..
-	"SCRIPT ATUALIZADO\n" ..
-	"━━━━━━━━━━━━━━━━━━\n\n" ..
-	"HORA ATUAL: " .. horaAtual .. "\n" ..
-	"AGUARDE ENQUANTO AS ALTERAÇÕES\n" ..
-	"ESTÃO SENDO APLICADAS..."
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "IceHubWarning"
+gui.ResetOnSpawn = false
+gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Painel
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 520, 0, 250)
+frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+frame.BorderSizePixel = 0
+frame.Parent = gui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 16)
+corner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(0, 255, 120)
+stroke.Parent = frame
+
+-- Título
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Text = "ICE HUB // SYSTEM WARNING"
+title.TextColor3 = Color3.fromRGB(0, 255, 120)
+title.Font = Enum.Font.Code
+title.TextSize = 22
+title.Parent = frame
+
+-- Texto
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -20, 1, -50)
+label.Position = UDim2.new(0, 10, 0, 45)
+label.BackgroundTransparency = 1
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = Enum.Font.Code
+label.TextSize = 17
+label.TextWrapped = true
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Top
+label.Parent = frame
+
+-- Efeito neon pulsando
+task.spawn(function()
+	while true do
+		TweenService:Create(
+			stroke,
+			TweenInfo.new(1),
+			{Transparency = 0.6}
+		):Play()
+
+		task.wait(1)
+
+		TweenService:Create(
+			stroke,
+			TweenInfo.new(1),
+			{Transparency = 0}
+		):Play()
+
+		task.wait(1)
+	end
+end)
+
+-- Efeito de digitação
+local function TypeWriter(text, speed)
+	label.Text = ""
+
+	for i = 1, #text do
+		label.Text = text:sub(1, i)
+		task.wait(speed)
+	end
+end
+
+-- Atualização em tempo real
+while true do
+	local horaAtual = os.date("%H:%M:%S")
+
+	local texto =
+		"⚠ SYSTEM ALERT ⚠\n\n" ..
+		"AVISO: O SCRIPT ESTÁ EM ATUALIZAÇÃO\n\n" ..
+		"━━━━━━━━━━━━━━━━━━\n" ..
+		"MOTIVO:\n" ..
+		"SCRIPT ATUALIZADO\n" ..
+		"━━━━━━━━━━━━━━━━━━\n\n" ..
+		"HORA ATUAL: " .. horaAtual .. "\n\n" ..
+		"AGUARDE...\n" ..
+		"AS NOVAS ALTERAÇÕES ESTÃO SENDO APLICADAS."
+
+	TypeWriter(texto, 0.015)
+
+	task.wait(1)
+end
